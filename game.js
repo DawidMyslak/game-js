@@ -1,31 +1,31 @@
 var game = (function () {
 
-  /* shared scope */
+  // shared scope
   var _scope = {};
 
-  /* game loop data */
-  var _fps = 30;
-  var _interval = 1000 / _fps;
-  var _now;
-  var _then = Date.now();
-  var _delta;
+  // game loop data
+  var _fps = 30,
+    _interval = 1000 / _fps,
+    _now = 0,
+    _then = 0,
+    _delta = 0;
 
-  /* canvas data */
-  var _canvas = document.createElement('canvas');
-  var _context = _canvas.getContext('2d');
+  // canvas data
+  var _canvas = document.createElement('canvas'),
+    _context = _canvas.getContext('2d');
   _canvas.width = 480;
   _canvas.height = 320;
 
-  /* keyboard status */
+  // keyboard status
   var _keyboard = {};
 
-  /* sprites array */
+  // sprites array
   var _sprites = [];
 
-  /* user callbacks */
+  // user callbacks
   var $init, $load, $update, $draw;
 
-  /* sprites provider */
+  // sprites provider
   var $sprites = {
     load: function (src) {
       var sprite = {
@@ -44,7 +44,7 @@ var game = (function () {
     }
   };
 
-  /* canvas provider */
+  // canvas provider
   var $canvas = {
     draw: function (obj) {
       if (_sprites[obj.sprite].loaded) {
@@ -56,7 +56,7 @@ var game = (function () {
     }
   };
 
-  /* config provider */
+  // config provider
   var $config = {
     fps: function (value) {
       _fps = value;
@@ -68,21 +68,34 @@ var game = (function () {
     }
   };
 
-  /* game loop */
-  var $loop = function () {
-    requestAnimationFrame($loop);
-
-    _now = Date.now();
-    _delta = _now - _then;
-
-    if (_delta > _interval) {
-      _then = _now - (_delta % _interval);
-      $update(_scope, _keyboard, _delta);
-      $draw(_scope, $canvas);
+  // game loop
+  var $loop = function (now) {
+    if (now < _then + _interval) {
+      requestAnimationFrame($loop);
+      return;
     }
+
+    _delta += now - _then;
+    _then = now;
+
+    var updates = 0;
+    while (_delta >= _interval) {
+      $update(_scope, _keyboard, _interval);
+      updates++;
+
+      _delta -= _interval;
+
+      if (updates >= 100) {
+        _delta = 0;
+        break;
+      }
+    }
+
+    $draw(_scope, $canvas);
+    requestAnimationFrame($loop);
   };
 
-  /* start game */
+  // start game
   var $start = function () {
     addEventListener('keydown', function (event) {
       _keyboard[event.keyCode] = true;
@@ -95,10 +108,10 @@ var game = (function () {
     $init(_scope, $config);
     document.body.appendChild(_canvas);
     $load(_scope, $sprites);
-    $loop();
+    requestAnimationFrame($loop);
   };
 
-  /* game interface */
+  // game interface
   return {
     init: function (callback) {
       $init = callback;
