@@ -1,4 +1,4 @@
-var SPEED = 0.1; // 100px per second
+var SPEED = 0.1; // 100 px per second
 var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40 };
 
 var player = {
@@ -25,6 +25,7 @@ game
       else if (key === KEY.RIGHT) player.speed.x = SPEED;
       else if (key === KEY.DOWN) player.speed.y = SPEED;
     });
+    
     keyboard.on('keyup', function (event) {
       var key = event.keyCode;
       if (key === KEY.LEFT || key === KEY.RIGHT) player.speed.x = 0;
