@@ -1,5 +1,6 @@
 var SPEED = 0.1; // 100px per second
 var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40 };
+
 var player = {
   position: { x: 100, y: 100 },
   speed: { x: 0, y: 0 }
