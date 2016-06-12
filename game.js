@@ -1,10 +1,12 @@
 var game = (function () {
-
-  // shared scope
-  var _scope = {};
+  // animation polyfill
+  requestAnimationFrame = window.requestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
+    window.msRequestAnimationFrame ||
+    window.mozRequestAnimationFrame;
 
   // game loop data
-  var _fps = 30,
+  var _fps = 60,
     _interval = 1000 / _fps,
     _now = 0,
     _then = 0,
@@ -13,29 +15,28 @@ var game = (function () {
   // canvas data
   var _canvas = document.createElement('canvas'),
     _context = _canvas.getContext('2d');
-  _canvas.width = 480;
-  _canvas.height = 320;
+  _canvas.width = 800;
+  _canvas.height = 600;
 
-  // keyboard status
-  var _keyboard = {};
-
-  // sprites array
-  var _sprites = [];
+  // sprites data
+  var _sprites = [],
+    _loaded = 0;
 
   // user callbacks
-  var $init, $load, $update, $draw;
+  var $empty = function () { };
+  var $init = $empty, $load = $empty, $events = $empty, $update = $empty, $draw = $empty;
 
-  // sprites provider
-  var $sprites = {
+  // content provider
+  var $content = {
     load: function (src) {
       var sprite = {
         id: _sprites.length,
-        image: new Image(),
-        loaded: false
+        image: new Image()
       };
 
       sprite.image.onload = function () {
-        sprite.loaded = true;
+        _loaded++;
+        $run();
       };
 
       sprite.image.src = src;
@@ -44,12 +45,17 @@ var game = (function () {
     }
   };
 
+  // keyboard provider
+  var $keyboard = {
+    on: function (type, listener) {
+      addEventListener(type, listener);
+    }
+  };
+
   // canvas provider
   var $canvas = {
     draw: function (obj) {
-      if (_sprites[obj.sprite].loaded) {
-        _context.drawImage(_sprites[obj.sprite].image, obj.position.x, obj.position.y);
-      }
+      _context.drawImage(_sprites[obj.sprite].image, obj.position.x, obj.position.y);
     },
     clear: function () {
       _context.clearRect(0, 0, _canvas.width, _canvas.height);
@@ -62,14 +68,14 @@ var game = (function () {
       _fps = value;
       _interval = 1000 / _fps;
     },
-    size: function (obj) {
+    resolution: function (obj) {
       _canvas.width = obj.width;
       _canvas.height = obj.height;
     }
   };
 
   // game loop
-  var $loop = function (now) {
+  function $loop(now) {
     if (now < _then + _interval) {
       requestAnimationFrame($loop);
       return;
@@ -80,7 +86,7 @@ var game = (function () {
 
     var updates = 0;
     while (_delta >= _interval) {
-      $update(_scope, _keyboard, _interval);
+      $update(_interval);
       updates++;
 
       _delta -= _interval;
@@ -91,24 +97,24 @@ var game = (function () {
       }
     }
 
-    $draw(_scope, $canvas);
+    $draw($canvas);
     requestAnimationFrame($loop);
   };
 
+  // run game loop
+  function $run() {
+    if (_loaded === _sprites.length) {
+      requestAnimationFrame($loop);
+    }
+  };
+
   // start game
-  var $start = function () {
-    addEventListener('keydown', function (event) {
-      _keyboard[event.keyCode] = true;
-    });
-
-    addEventListener('keyup', function (event) {
-      delete _keyboard[event.keyCode];
-    });
-
-    $init(_scope, $config);
+  function $start() {
+    $events($keyboard);
+    $init($config);
     document.body.appendChild(_canvas);
-    $load(_scope, $sprites);
-    requestAnimationFrame($loop);
+    $load($content);
+    $run();
   };
 
   // game interface
@@ -119,6 +125,10 @@ var game = (function () {
     },
     load: function (callback) {
       $load = callback;
+      return this;
+    },
+    events: function (callback) {
+      $events = callback;
       return this;
     },
     update: function (callback) {
