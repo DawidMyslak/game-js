@@ -54,8 +54,16 @@ var game = (function () {
 
   // canvas provider
   var $canvas = {
-    draw: function (obj) {
-      _context.drawImage(_sprites[obj.sprite].image, obj.position.x, obj.position.y);
+    draw: function (sprite, position, angle) {
+      var image = _sprites[sprite].image,
+        position = position || { x: 0, y: 0 },
+        angle = angle || 0;
+
+      _context.save();
+      _context.translate(position.x, position.y);
+      _context.rotate(angle * Math.PI / 180);
+      _context.drawImage(image, -(image.width / 2), -(image.height / 2));
+      _context.restore();
     },
     clear: function () {
       _context.clearRect(0, 0, _canvas.width, _canvas.height);

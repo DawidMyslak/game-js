@@ -26,7 +26,7 @@ game
 
   .draw(function (canvas) {
     canvas.clear(); // clear canvas
-    canvas.draw(player); // draw player
+    canvas.draw(player.sprite, player.position); // draw player
   })
 
   .start();
